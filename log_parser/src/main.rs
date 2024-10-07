@@ -1,32 +1,48 @@
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use regex::Regex;
 
 fn main() -> io::Result<()> {
-    println!("Write path to log file: ");
+    print!("Write path to log file: ");
+
+    io::stdout().flush().unwrap();
 
     let mut path = String::new();
 
     io::stdin()
         .read_line(&mut path)
-        .expect("Failed to read line");
+        .expect("Failed to read path");
+
+    let path = path.trim();
 
     let file = File::open(&path)?;
     let reader = io::BufReader::new(file);
 
-    let re = Regex::new(r"ERROR").unwrap();
+    print!("Write log level (ERROR, WARNING, INFO, DEBUG): ");
 
-    let mut error_count = 0;
+    io::stdout().flush().unwrap();
+
+    let mut log_level = String::new();
+
+    io::stdin()
+        .read_line(&mut log_level)
+        .expect("Failed to read log level");
+
+    let log_level = log_level.trim();
+
+    let re = Regex::new(log_level).unwrap();
+
+    let mut count = 0;
 
     for line in reader.lines() {
         let line = line?;
         if re.is_match(&line) {
-            error_count += 1;
+            count += 1;
             println!("{}", line);
         }
     }
 
-    println!("Total number of errors: {}", error_count);
+    println!("Total number of {log_level}: {count}");
 
     Ok(())
 }
