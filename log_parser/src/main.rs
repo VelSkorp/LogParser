@@ -1,34 +1,16 @@
+mod log_config;
+
 use std::fs::File;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead};
+use log_config::load_config;
 use rayon::prelude::*;
 use regex::Regex;
 
 fn main() -> io::Result<()> {
-    print!("Write path to log file: ");
-
-    io::stdout().flush().unwrap();
-
-    let mut path = String::new();
-
-    io::stdin()
-        .read_line(&mut path)
-        .expect("Failed to read path");
-
-    let path = path.trim();
-    let file = File::open(&path)?;
+    let config = load_config();
+    let log_level = &config.log_level;
+    let file = File::open(&config.log_file)?;
     let reader = io::BufReader::new(file);
-
-    print!("Write log level (ERROR, WARNING, INFO, DEBUG): ");
-
-    io::stdout().flush().unwrap();
-
-    let mut log_level = String::new();
-
-    io::stdin()
-        .read_line(&mut log_level)
-        .expect("Failed to read log level");
-
-    let log_level = log_level.trim();
     let regex = Regex::new(log_level).unwrap();
     let chunk_size = 1000;
     let mut lines: Vec<String> = Vec::new();
