@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct LogConfig {
     pub log_file: String,
-    pub log_level: String,
+    pub log_levels: Vec<String>,
 }
 
 pub fn load_config() -> LogConfig {

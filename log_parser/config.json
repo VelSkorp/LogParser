@@ -1,4 +1,4 @@
 {
     "log_file" : "./ChatHostCopy.txt",
-    "log_level" : "ERROR"
+    "log_levels" : [ "ERROR", "INFO" ]
 }

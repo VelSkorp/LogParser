@@ -7,7 +7,7 @@ use std::io;
 fn main() -> io::Result<()> {
     let counter = LogCounter::count_logs()?;
 
-    println!("Total number of {}: {}", &counter.log_level, &counter.count);
+    println!("Total number of {}: {}", &counter.log_levels.join(", "), &counter.count);
 
     Ok(())
 }

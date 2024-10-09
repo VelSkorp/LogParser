@@ -6,20 +6,21 @@ use regex::Regex;
 
 #[derive(Debug)]
 pub struct LogCounter {
-    pub log_level: String,
+    pub log_levels: Vec<String>,
     pub count: usize
 }
 
 impl LogCounter {
     pub fn count_logs() -> Result<Self, io::Error> {
         let config = load_config();
-        let log_level = &config.log_level;
         let file = File::open(&config.log_file)?;
         let reader = io::BufReader::new(file);
-        let regex = Regex::new(log_level).unwrap();
         let chunk_size = 1000;
         let mut lines: Vec<String> = Vec::new();
         let mut count = 0;
+        let regex: Vec<Regex> = config.log_levels.iter()
+        .map(|level| Regex::new(&level).unwrap())
+        .collect();
 
         for line in reader.lines() {
             let line = line?;
@@ -35,12 +36,12 @@ impl LogCounter {
             count += process_log_lines(lines, &regex);
         }
 
-        Ok(LogCounter { log_level: log_level.to_string(), count})
+        Ok(LogCounter { log_levels: config.log_levels, count})
     }
 }
 
-fn process_log_lines(lines:Vec<String>, regex: &Regex) -> usize {
+fn process_log_lines(lines:Vec<String>, regex: &Vec<Regex>) -> usize {
     lines.into_par_iter()
-        .filter(|line| regex.is_match(line))
+        .filter(|line| regex.iter().any(|re| re.is_match(line)))
         .count()
 }
