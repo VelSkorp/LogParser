@@ -1,4 +1,5 @@
 use crate::log_config::load_config;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use rayon::prelude::*;
@@ -6,8 +7,7 @@ use regex::Regex;
 
 #[derive(Debug)]
 pub struct LogCounter {
-    pub log_levels: Vec<String>,
-    pub count: usize
+    pub log_count: HashMap<String, usize>,
 }
 
 impl LogCounter {
@@ -17,10 +17,7 @@ impl LogCounter {
         let reader = io::BufReader::new(file);
         let chunk_size = 1000;
         let mut lines: Vec<String> = Vec::new();
-        let mut count = 0;
-        let regex: Vec<Regex> = config.log_levels.iter()
-        .map(|level| Regex::new(&level).unwrap())
-        .collect();
+        let mut log_count: HashMap<String, usize> = HashMap::new();
 
         for line in reader.lines() {
             let line = line?;
@@ -28,20 +25,32 @@ impl LogCounter {
 
             if lines.len() >= chunk_size {
                 let chunk = lines.split_off(0);
-                count += process_log_lines(chunk, &regex);
+                log_count = process_log_lines(&chunk, &config.log_levels, log_count);
             }
         }
 
         if !lines.is_empty() {
-            count += process_log_lines(lines, &regex);
+            log_count = process_log_lines(&lines, &config.log_levels, log_count);
         }
 
-        Ok(LogCounter { log_levels: config.log_levels, count})
+        Ok(LogCounter { log_count })
     }
 }
 
-fn process_log_lines(lines:Vec<String>, regex: &Vec<Regex>) -> usize {
-    lines.into_par_iter()
-        .filter(|line| regex.iter().any(|re| re.is_match(line)))
-        .count()
+fn process_log_lines(
+    lines: &Vec<String>,
+    log_levels: &Vec<String>,
+    mut log_count: HashMap<String, usize>
+) -> HashMap<String, usize> {
+    for level in log_levels {
+        let regex = Regex::new(&level).unwrap();
+        let count = lines.par_iter()
+            .filter(|line| regex.is_match(line)) 
+            .count();
+        
+        log_count.entry(level.to_string())
+            .and_modify(|value| *value += count)
+            .or_insert(count);
+    }
+    log_count
 }
